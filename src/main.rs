@@ -1,4 +1,6 @@
 mod day1;
+mod day2;
+mod util;
 // ... import other days
 
 use std::env;
@@ -13,6 +15,7 @@ fn main() {
 
     let result = match args[1].as_str() {
         "1" => day1::run(),
+        "2" => day2::run(),
         // ... other days
         _ => {
             println!("Day not recognized");

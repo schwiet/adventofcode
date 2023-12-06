@@ -1,6 +1,5 @@
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
-use std::path::Path;
+use super::util::open_file_as_bufreader;
+use std::io::{self, BufRead};
 
 const DIGIT_DEFINITIONS: &[(&str, u32)] = &[
     ("zero", 0),
@@ -48,14 +47,8 @@ fn find_digit(chars: &[char], reverse: bool, count_spelled: bool) -> Option<u32>
 }
 
 pub fn run() -> io::Result<()> {
-    // Specify the file path
-    let path = Path::new("src/day1/input.txt");
-
-    // Open the file in read-only mode (ignoring errors)
-    let file = File::open(&path)?;
-
     // Create a new BufReader for the file
-    let reader = BufReader::new(file);
+    let reader = open_file_as_bufreader("src/day1/input.txt")?;
 
     let mut sum = 0;
 
@@ -68,7 +61,6 @@ pub fn run() -> io::Result<()> {
         let last_digit = find_digit(&chars, true, true);
 
         if let (Some(first), Some(last)) = (first_digit, last_digit) {
-            println!(":{first},{last}");
             sum += first * 10 + last
         }
     }
