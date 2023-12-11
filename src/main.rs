@@ -2,8 +2,9 @@ mod day1;
 mod day2;
 //
 mod day7;
-mod day8;
+// mod day8;
 mod day9;
+mod day10;
 mod util;
 
 use std::env;
@@ -20,8 +21,9 @@ fn main() {
         "1" => day1::run(),
         "2" => day2::run(),
         "7" => day7::run(),
-        "8" => day8::run(),
+        // "8" => day8::run(),
         "9" => day9::run(),
+        "10" => day10::run(),
         // ... other days
         _ => {
             println!("Day not recognized");

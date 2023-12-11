@@ -28,8 +28,77 @@ pub fn run() -> io::Result<()> {
     for y in 0..matrix.len() {
         for x in 0..matrix[y].len() {
             if is_in_loop((-1, -1), (-1, -1), (x as i32, y as i32), &matrix, &mut path) {
-
                 println!("found {:?}", path.len() / 2);
+                for d in path {
+                    if d.0 == '|' {
+                        matrix[d.2 as usize][d.1 as usize] = '┇'
+                    } else if d.0 == 'L' {
+                        matrix[d.2 as usize][d.1 as usize] = '┗'
+                    } else if d.0 == 'F' {
+                        matrix[d.2 as usize][d.1 as usize] = '┏'
+                    } else if d.0 == 'J' || d.0 == 'S' {
+                        // note: I happen to know S is a J in my input
+                        matrix[d.2 as usize][d.1 as usize] = '┛'
+                    } else if d.0 == '7' {
+                        matrix[d.2 as usize][d.1 as usize] = '┓'
+                    } else {
+                        matrix[d.2 as usize][d.1 as usize] = '┅'
+                    };
+                }
+
+                let mut sum: u64 = 0;
+                let mut odd: bool = false;
+                print!("\n");
+                for row in matrix {
+                    let mut corner: char = ' ';
+                    let mut vert_ct: u64 = 0;
+
+                    for cell in row {
+                        match cell {
+                            '┇' => {
+                                vert_ct += 1;
+                                print!("{cell}");
+                            }
+                            '┗' => {
+                                corner = cell;
+                                print!("{cell}");
+                            }
+                            '┏' => {
+                                corner = cell;
+                                print!("{cell}");
+                            }
+                            '┛' => {
+                                print!("{cell}");
+                                if corner == '┏' {
+                                    vert_ct += 1;
+                                }
+                                corner = ' ';
+                            }
+                            '┓' => {
+                                print!("{cell}");
+                                if corner == '┗' {
+                                    vert_ct += 1;
+                                }
+                                corner = ' ';
+                            }
+                            '┅' => {
+                                print!("{cell}");
+                            }
+                            _ => {
+                                if vert_ct % 2 != 0 {
+                                    print!("I");
+                                    sum += 1;
+                                } else {
+                                    print!("O");
+                                }
+                            }
+                        }
+                    }
+                    print!("\n");
+                }
+
+                println!("Tiles Inside: {sum}");
+
                 return Ok(());
             }
         }
