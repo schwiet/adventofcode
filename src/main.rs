@@ -1,11 +1,12 @@
 mod day1;
 mod day2;
 //
+mod day6;
 mod day7;
 // mod day8;
-mod day9;
 mod day10;
 mod day11;
+mod day9;
 mod util;
 
 use std::env;
@@ -21,6 +22,7 @@ fn main() {
     let result = match args[1].as_str() {
         "1" => day1::run(),
         "2" => day2::run(),
+        "6" => day6::run(),
         "7" => day7::run(),
         // "8" => day8::run(),
         "9" => day9::run(),
