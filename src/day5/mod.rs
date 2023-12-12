@@ -82,11 +82,42 @@ pub fn run() -> io::Result<()> {
         }
     }
 
+    let mut lowest: Option<u64> = None;
     for seed in seeds {
-        // let soil = seed_to_soil.binary_search_by(|m| probe.cmp(&seek))
+        let soil = get_mapped_val(&seed_to_soil, seed);
+        let fert = get_mapped_val(&soil_to_fert, soil);
+        let water = get_mapped_val(&fert_to_water, fert);
+        let light = get_mapped_val(&water_to_light, water);
+        let temp = get_mapped_val(&light_to_temp, light);
+        let hum = get_mapped_val(&temp_to_hum, temp);
+        let loc = get_mapped_val(&hum_to_loc, hum);
+
+        lowest = if let Some(low) = lowest {
+            if loc < low {
+                Some(loc)
+            } else {
+                lowest
+            }
+        } else {
+            Some(loc)
+        };
+        println!("seed: {seed}, location: {loc}");
     }
 
-    println!("seeds: {:?}", seeds);
-    println!("seed_to_soil: {:?}", seed_to_soil);
+    if let Some(l) = lowest {
+        println!("Closest Location {l}");
+    }
+
     Ok(())
+}
+
+fn get_mapped_val(m: &[Mapping], input: u64) -> u64 {
+    let mapping = m
+        .iter()
+        .find(|&m| input >= m.src_start && input <= m.src_start + m.range);
+    if let Some(s) = mapping {
+        return input - s.src_start + s.dest_start;
+    } else {
+        return input;
+    }
 }
