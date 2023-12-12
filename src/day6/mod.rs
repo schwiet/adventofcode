@@ -1,5 +1,4 @@
 use super::util::open_file_as_bufreader;
-use std::collections::{HashMap, HashSet};
 use std::io::{self, BufRead};
 
 pub fn run() -> io::Result<()> {
