@@ -1,22 +1,41 @@
 use super::util::open_file_as_bufreader;
 use std::io::{self, BufRead};
 
-fn get_permutations(seq: &Vec<u32>, row: &[Vec<char>]) -> u64 {
+// TODO: I'm not quite there with this one. Vaguely, I know you need to try
+//       permutations of sequences on permuations of groups, but I haven't
+//       fleshed out an algorithm
+fn get_permutations(seq: &[u32], row: &[Vec<char>]) -> u64 {
     let mut sum: u64 = 0;
 
-    let req: u32 = seq.iter().fold(0, |acc, &x| acc + x);
-    let avail: u32 = row.iter().fold(0, |acc, group| group.len() as u32 + acc);
+    let mut start_seq = &seq[0..];
+    while start_seq.len() > 0 {
+        let seq_total = 0;
+        for r in row.iter() {
+            // get the number of permuations of this sequence that can be made
+            // in just this row
+            let mut num = perm_count(start_seq, r);
 
-    if req > avail {
-        return 0;
+            // if any, keep track and try the remainder of the sequence on the
+            // next row
+            if num != 0 {
+                if seq_total == 0 {
+                    seq_total = num
+                } else {
+                    seq_total *= num
+                }
+                // rem_seq = $
+                num = perm_count()
+            }
+        }
+        s = &start_seq[0..s.len() - 1];
     }
 
-    println!("possible - {:?} {:?}", row, seq);
-
-    if row.len() > 1 {
-        sum += get_permutations(seq, &row[1..])
-    }
     return sum;
+}
+
+fn perm_count(seq: &[u32], row: &Vec<char>) -> u64 {
+    // TODO
+    0
 }
 
 fn get_groups(row: &str) -> Option<Vec<Vec<char>>> {
