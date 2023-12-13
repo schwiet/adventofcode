@@ -24,7 +24,11 @@ pub fn run() -> io::Result<()> {
     let mut positions: Vec<String> = Vec::new();
 
     let mut positions_map: HashMap<String, Directions> = HashMap::new();
+
     let re = Regex::new(r"(\w+) = \((\w+), (\w+)\)").unwrap();
+    let ends_A = Regex::new(r".*A$").unwrap();
+    let ends_Z = Regex::new(r".*Z$").unwrap();
+
     let lines = reader.lines();
     let pos_lines = lines.skip(1);
     // Iterate over each line in the file
@@ -44,8 +48,8 @@ pub fn run() -> io::Result<()> {
             };
             positions_map.insert(position.to_string(), directions);
 
-            if let Some(start_pos) = re.captures(position) {
-                positions.push(start_pos.get(1).unwrap().as_str().to_string());
+            if let Some(start_pos) = ends_A.captures(&position) {
+                positions.push(start_pos.get(0).unwrap().as_str().to_string());
             }
         } else {
             println!("{line} didn't match regex")
@@ -54,43 +58,77 @@ pub fn run() -> io::Result<()> {
         // println!("line - {line}");
     }
 
-    let pos_count: u32 = positions.len();
-    let mut z_count: u32 = 0;
+    let mut z_count: usize = 0;
     let mut found: bool = false;
     let mut steps: u64 = 0;
+
+    let mut uk_paths: Vec<Vec<String>> = vec![Vec::new(); positions.len()];
+    let mut kn_dists: HashMap<String, usize> = HashMap::new();
+    let mut remaining: Vec<u64> = vec![0; positions.len()];
+    println!("num {}", positions.len());
     while !found {
         for dir in directions.chars() {
-            if pos == "ZZZ" {
+
+            if remaining[0] != 0 && remaining.iter().all(|&x| x == remaining[0]) {
                 found = true;
-                println!("steps = {steps}");
+                println!("steps = {}", steps + remaining[0]);
                 return Ok(());
             } else {
                 // print!("visited {pos}");
                 steps += 1;
             }
-            // Accessing values by position
-            if let Some(dirs) = positions_map.get(pos) {
-                // println!(", next {dir}");
-                match dir {
-                    'L' => {
-                        pos = &dirs.left;
+
+            if z_count > 0 {
+                println!("{}/{} Zs - {:?}", z_count, positions.len(), positions);
+            }
+
+            // println!("{:?}", kn_dists);
+            // reset the count of end postitions that match our goal
+            z_count = 0;
+            let mut new_pos: &str;
+            for i in 0..positions.len() {
+                let pos: &str = &positions[i];
+                // Accessing values by position
+                if let Some(dirs) = positions_map.get(pos) {
+                    // println!(", next {dir}");
+                    match dir {
+                        'L' => {
+                            new_pos = &dirs.left;
+                        }
+                        'R' => {
+                            new_pos = &dirs.right;
+                        }
+                        _ => {
+                            println!("Direction not found - {pos}");
+                            return Ok(());
+                        }
                     }
-                    'R' => {
-                        pos = &dirs.right;
+                    positions[i] = new_pos.to_string();
+                    let mut cur_path_len: usize = 0;
+
+                    // Clone the value obtained from get to avoid borrowing conflicts
+                    let dist = kn_dists.get(new_pos).cloned().unwrap_or(0);
+
+                    if dist > 0 || ends_Z.is_match(new_pos) {
+                        for j in 0..uk_paths[i].len() {
+                            cur_path_len += 1;
+                            kn_dists.insert(uk_paths[i][j].clone(), cur_path_len + dist);
+                        }
+                        uk_paths[i].clear();
+                        remaining[i] = steps + dist as u64
+                    } else {
+                        uk_paths[i].push(new_pos.to_string());
+                        remaining[i] = 0;
                     }
-                    _ => {
-                        println!("Direction not found - {pos}");
-                        return Ok(());
-                    }
+                } else {
+                    println!("Position not found - {pos}");
+                    return Ok(());
                 }
-            } else {
-                println!("Position not found - {pos}");
-                return Ok(());
             }
         }
 
-        print!("\r");
-        print!("{steps} steps so far...");
+        // print!("\r");
+        // print!("{steps} steps so far...");
     }
 
     Ok(())
