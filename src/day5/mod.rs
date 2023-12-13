@@ -83,25 +83,40 @@ pub fn run() -> io::Result<()> {
     }
 
     let mut lowest: Option<u64> = None;
-    for seed in seeds {
-        let soil = get_mapped_val(&seed_to_soil, seed);
-        let fert = get_mapped_val(&soil_to_fert, soil);
-        let water = get_mapped_val(&fert_to_water, fert);
-        let light = get_mapped_val(&water_to_light, water);
-        let temp = get_mapped_val(&light_to_temp, light);
-        let hum = get_mapped_val(&temp_to_hum, temp);
-        let loc = get_mapped_val(&hum_to_loc, hum);
-
-        lowest = if let Some(low) = lowest {
-            if loc < low {
-                Some(loc)
-            } else {
-                lowest
+    let mut seed_iter = seeds.iter();
+    loop {
+        let (s, e) = match (seed_iter.next(), seed_iter.next()) {
+            (Some(s), Some(r)) => (*s, s + r),
+            (_, _) => {
+                break;
             }
-        } else {
-            Some(loc)
         };
-        println!("seed: {seed}, location: {loc}");
+        println!("Checking range {s} - {e}");
+
+        // TODO: this is not optimized. I think I could maintain a map of ranges
+        //       for which a lowest location has already been found and utilize
+        //       that to skip checking seeds for ranges where the lowest value
+        //       is already known
+        for x in s..e {
+            let soil = get_mapped_val(&seed_to_soil, x);
+            let fert = get_mapped_val(&soil_to_fert, soil);
+            let water = get_mapped_val(&fert_to_water, fert);
+            let light = get_mapped_val(&water_to_light, water);
+            let temp = get_mapped_val(&light_to_temp, light);
+            let hum = get_mapped_val(&temp_to_hum, temp);
+            let loc = get_mapped_val(&hum_to_loc, hum);
+
+            lowest = if let Some(low) = lowest {
+                if loc < low {
+                    Some(loc)
+                } else {
+                    lowest
+                }
+            } else {
+                Some(loc)
+            };
+            // println!("seed: {x}, location: {loc}");
+        }
     }
 
     if let Some(l) = lowest {
