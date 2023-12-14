@@ -1,5 +1,6 @@
 use super::util::open_file_as_bufreader;
 use std::io::{self, BufRead, ErrorKind};
+use std::ops::Range;
 
 use nalgebra::DMatrix;
 
@@ -13,61 +14,131 @@ fn binary_to_u64(binary_data: &[u8]) -> u64 {
     result
 }
 
+fn find_reflection(vec: &[String]) -> Option<usize> {
+    for i in (0..vec.len() - 1) {
+        if vec[i] == vec[i + 1] {
+            let mut found_diff = false;
+            for (l, u) in (0..i + 1).rev().zip((i + 1..vec.len())) {
+                // println!("comparing \n\t{}\n\t{}", vec[l], vec[u]);
+                if vec[l] != vec[u] {
+                    found_diff = true;
+                    break;
+                }
+            }
+
+            if !found_diff {
+                println!("Found Reflection at: {i}");
+                return Some(i + 1);
+            }
+        }
+    }
+    None
+}
+
 pub fn run() -> io::Result<()> {
     // Create a new BufReader for the file
-    let reader = open_file_as_bufreader("src/day13/example.txt")?;
+    let reader = open_file_as_bufreader("src/day13/input.txt")?;
 
     let mut ref_rows: u64 = 0;
     let mut ref_cols: u64 = 0;
 
-    let mut rows: Vec<u64> = Vec::new();
-    let mut cols: Vec<u64> = Vec::new();
-    let mut matrix: Vec<Vec<u8>> = Vec::new();
+    let mut rows: Vec<String> = Vec::new();
+    let mut cols: Vec<String> = Vec::new();
+    let mut matrix: Vec<Vec<char>> = Vec::new();
 
     let mut col_count = 0usize;
+
+    let mut sum = 0u64;
 
     for line in reader.lines() {
         let line = line?;
 
         if line.is_empty() {
+            println!("***************************");
             // Construct matrix
             let row_count = matrix.len();
-            let tmat =
-                DMatrix::from_iterator(row_count, col_count, matrix.clone().into_iter().flatten());
-            let mat = tmat.transpose();
+            let mat =
+                DMatrix::from_iterator(col_count, row_count, matrix.clone().into_iter().flatten());
 
-            println!("Matrix {mat}");
-            println!("Transpose {tmat}");
+            // println!("Transpose {mat}");
+
+            cols = mat
+                .row_iter()
+                .map(|row| row.iter().collect::<String>())
+                .collect();
 
             // find reflection
+            let mut row_index: Option<usize> = None;
+            let mut col_index: Option<usize> = None;
+
+            row_index = find_reflection(&rows);
+            if let Some(ref_row) = row_index {
+                ref_rows += (ref_row as u64);
+                println!("found row reflection {ref_row}");
+                for i in (0..rows.len()) {
+                    // println!("Row: {} - {i}", rows[i]);
+                }
+            }
+
+            col_index = find_reflection(&cols);
+            if let Some(ref_col) = col_index {
+                ref_cols += (ref_col as u64);
+                println!("found column reflection {ref_col}");
+                for i in (0..cols.len()) {
+                    // println!("Col: {} - {i}", cols[i]);
+                }
+            }
+
+            match (row_index, col_index) {
+                (None, None) => {
+                    println!("found no reflection");
+                    for i in (0..rows.len()) {
+                        println!("Row: {} - {i}", rows[i]);
+                    }
+                    for i in (0..cols.len()) {
+                        println!("Col: {} - {i}", cols[i]);
+                    }
+                }
+                (_, _) => {}
+            }
 
             // reset rows and cols
+            rows.clear();
+            cols.clear();
+            matrix.clear();
+            col_count = 0;
+            println!("--------------------------");
         } else {
             // Replace '#' with 1 and '.' with 0
-            println!("Src: {line}");
             let row_bin = line
                 .chars()
-                .map(|c| match c {
-                    '.' => 0u8,
-                    '#' => 1u8,
-                    _ => panic!("Invalid character"),
-                })
-                .collect::<Vec<u8>>();
+                // .map(|c| match c {
+                //     '.' => 0u8,
+                //     '#' => 1u8,
+                //     _ => panic!("Invalid character"),
+                // })
+                .collect::<Vec<char>>();
 
             col_count = row_bin.len();
 
             // convert binary representation to a u64
-            let row: u64 = binary_to_u64(&row_bin);
+            // let row: u64 = binary_to_u64(&row_bin);
 
             // keep the u64 for the row
-            rows.push(row);
+            // rows.push(row);
+
+            // keep the string
+            rows.push(line.trim().to_string());
 
             // keep the binary row so we can calculate the column representation, later
             matrix.push(row_bin);
         }
     }
 
-    println!("Result: {:?}", ref_cols * 100 + ref_rows);
+    println!(
+        "Result: {:?}, Rows {ref_rows} Cols {ref_cols}",
+        ref_cols + (ref_rows * 100)
+    );
 
     Ok(())
 }
