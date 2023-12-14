@@ -32,14 +32,12 @@ pub fn run() -> io::Result<()> {
         if line.is_empty() {
             // Construct matrix
             let row_count = matrix.len();
-            let mat =
+            let tmat =
                 DMatrix::from_iterator(row_count, col_count, matrix.clone().into_iter().flatten());
+            let mat = tmat.transpose();
 
             println!("Matrix {mat}");
-
-            let tmat = mat.transpose();
-
-            println!("Transposed {tmat}");
+            println!("Transpose {tmat}");
 
             // find reflection
 
