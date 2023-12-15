@@ -9,6 +9,7 @@ mod day10;
 mod day11;
 mod day12;
 mod day13;
+mod day14;
 mod day9;
 mod util;
 
@@ -34,6 +35,7 @@ fn main() {
         "11" => day11::run(),
         "12" => day12::run(),
         "13" => day13::run(),
+        "14" => day14::run(),
         // ... other days
         _ => {
             println!("Day not recognized");

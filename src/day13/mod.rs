@@ -1,5 +1,5 @@
 use super::util::open_file_as_bufreader;
-use std::io::{self, BufRead, ErrorKind};
+use std::io::{self, BufRead};
 use std::ops::Range;
 
 use nalgebra::DMatrix;
