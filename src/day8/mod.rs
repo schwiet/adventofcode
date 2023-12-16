@@ -9,6 +9,67 @@ struct Directions {
     right: String,
 }
 
+fn find_loop(positions: &HashMap<String, Directions>, directions: String, start: String) -> u64 {
+    let ends_Z = Regex::new(r".*Z$").unwrap();
+
+    let mut steps = 0u64;
+    let mut visited: HashMap<String, u64> = HashMap::new();
+    let mut next = start;
+
+    let mut z_found: Option<String> = None;
+    loop {
+        for direction in directions.chars() {
+            
+            // From the current position get the next position, based on
+            // direction
+            if let Some(next_step) = positions.get(&next) {
+                next = match direction {
+                    'L' => next_step.left.clone(),
+                    'R' => next_step.right.clone(),
+                    _ => {
+                        return 0;
+                    }
+                }
+            }
+
+            // keep track of how many steps have been taken
+            steps += 1;
+
+            // keep track of when position ending with Z is found
+            if let Some(captures) = ends_Z.captures(&next) {
+                let z_str = captures.get(0).unwrap().as_str().to_string();
+                z_found = Some(z_str);
+            }
+
+            // if we detected a loop and there is a Z-ending node in the loop
+            if visited.get(&next) != None && z_found != None {
+                println!("Loop including Z Detected at {next} after {steps} steps");
+                return steps - 1;
+            }
+
+            visited.insert(next.clone(), steps);
+        }
+    }
+
+    return steps;
+}
+
+fn gcd(a: u64, b: u64) -> u64 {
+    if b == 0 {
+        a
+    } else {
+        gcd(b, a % b)
+    }
+}
+
+fn lcm(a: u64, b: u64) -> u64 {
+    a / gcd(a, b) * b
+}
+
+fn lcm_of_set(numbers: &[u64]) -> u64 {
+    numbers.iter().cloned().reduce(|a, b| lcm(a, b)).unwrap_or(1)
+}
+
 pub fn run() -> io::Result<()> {
     // Create a new BufReader for the file
     let mut reader = open_file_as_bufreader("src/day8/input.txt")?;
@@ -27,7 +88,6 @@ pub fn run() -> io::Result<()> {
 
     let re = Regex::new(r"(\w+) = \((\w+), (\w+)\)").unwrap();
     let ends_A = Regex::new(r".*A$").unwrap();
-    let ends_Z = Regex::new(r".*Z$").unwrap();
 
     let lines = reader.lines();
     let pos_lines = lines.skip(1);
@@ -58,78 +118,14 @@ pub fn run() -> io::Result<()> {
         // println!("line - {line}");
     }
 
-    let mut z_count: usize = 0;
-    let mut found: bool = false;
-    let mut steps: u64 = 0;
-
-    let mut uk_paths: Vec<Vec<String>> = vec![Vec::new(); positions.len()];
-    let mut kn_dists: HashMap<String, usize> = HashMap::new();
-    let mut remaining: Vec<u64> = vec![0; positions.len()];
-    println!("num {}", positions.len());
-    while !found {
-        for dir in directions.chars() {
-
-            if remaining[0] != 0 && remaining.iter().all(|&x| x == remaining[0]) {
-                found = true;
-                println!("steps = {}", steps + remaining[0]);
-                return Ok(());
-            } else {
-                // print!("visited {pos}");
-                steps += 1;
-            }
-
-            if z_count > 0 {
-                println!("{}/{} Zs - {:?}", z_count, positions.len(), positions);
-            }
-
-            // println!("{:?}", kn_dists);
-            // reset the count of end postitions that match our goal
-            z_count = 0;
-            let mut new_pos: &str;
-            for i in 0..positions.len() {
-                let pos: &str = &positions[i];
-                // Accessing values by position
-                if let Some(dirs) = positions_map.get(pos) {
-                    // println!(", next {dir}");
-                    match dir {
-                        'L' => {
-                            new_pos = &dirs.left;
-                        }
-                        'R' => {
-                            new_pos = &dirs.right;
-                        }
-                        _ => {
-                            println!("Direction not found - {pos}");
-                            return Ok(());
-                        }
-                    }
-                    positions[i] = new_pos.to_string();
-                    let mut cur_path_len: usize = 0;
-
-                    // Clone the value obtained from get to avoid borrowing conflicts
-                    let dist = kn_dists.get(new_pos).cloned().unwrap_or(0);
-
-                    if dist > 0 || ends_Z.is_match(new_pos) {
-                        for j in 0..uk_paths[i].len() {
-                            cur_path_len += 1;
-                            kn_dists.insert(uk_paths[i][j].clone(), cur_path_len + dist);
-                        }
-                        uk_paths[i].clear();
-                        remaining[i] = steps + dist as u64
-                    } else {
-                        uk_paths[i].push(new_pos.to_string());
-                        remaining[i] = 0;
-                    }
-                } else {
-                    println!("Position not found - {pos}");
-                    return Ok(());
-                }
-            }
-        }
-
-        // print!("\r");
-        // print!("{steps} steps so far...");
+    let mut loop_lengths: Vec<u64> = Vec::new();
+    for pos in positions {
+        let loop_len = find_loop(&positions_map, directions.clone(), pos);
+        loop_lengths.push(loop_len);
     }
+
+    let lcm = lcm_of_set(&loop_lengths);
+    println!("Loops sync after: {lcm}");
 
     Ok(())
 }

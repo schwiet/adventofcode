@@ -4,7 +4,7 @@ mod day2;
 mod day5;
 mod day6;
 mod day7;
-// mod day8;
+mod day8;
 mod day10;
 mod day11;
 mod day12;
@@ -30,7 +30,7 @@ fn main() {
         "5" => day5::run(),
         "6" => day6::run(),
         "7" => day7::run(),
-        // "8" => day8::run(),
+        "8" => day8::run(),
         "9" => day9::run(),
         "10" => day10::run(),
         "11" => day11::run(),
