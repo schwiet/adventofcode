@@ -1,5 +1,6 @@
 mod day1;
 mod day2;
+mod day3;
 //
 mod day5;
 mod day6;
@@ -11,6 +12,7 @@ mod day12;
 mod day13;
 mod day14;
 mod day15;
+mod day16;
 mod day9;
 mod util;
 
@@ -27,6 +29,7 @@ fn main() {
     let result = match args[1].as_str() {
         "1" => day1::run(),
         "2" => day2::run(),
+        "3" => day3::run(),
         "5" => day5::run(),
         "6" => day6::run(),
         "7" => day7::run(),
@@ -38,6 +41,7 @@ fn main() {
         "13" => day13::run(),
         "14" => day14::run(),
         "15" => day15::run(),
+        "16" => day16::run(),
         // ... other days
         _ => {
             println!("Day not recognized");
