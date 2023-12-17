@@ -35,7 +35,7 @@ pub fn run() -> io::Result<()> {
         let t1: u64 = times[i];
         let d1: u64 = distances[i];
 
-        for t in (1..t1 + 1) {
+        for t in 1..t1 + 1 {
             if t * (t1 - t) > d1 {
                 sum += 1;
             }

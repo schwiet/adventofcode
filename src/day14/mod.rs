@@ -45,7 +45,7 @@ fn tilt(mut matrix: &mut Matrix) {
     // for each row, split on the cube rocks "#", sort each resulting vector or
     // just count the "O"s and replace the section, then join them all back with
     // the "#"
-    for i in (0..matrix.len()) {}
+    for i in 0..matrix.len() {}
 }
 
 pub fn run() -> io::Result<()> {
@@ -63,7 +63,7 @@ pub fn run() -> io::Result<()> {
     let num_cols = rows[0].len();
 
     let mut matrix = transpose(rows);
-    for i in (0..100) {
+    for i in 0..100 {
         tilt(&mut matrix);
         matrix = transpose(matrix);
         if i % 1000 == 0 {

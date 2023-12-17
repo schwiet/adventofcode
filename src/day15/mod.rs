@@ -1,5 +1,4 @@
 use super::util::open_file_as_bufreader;
-use std::collections::HashMap;
 use std::io::{self, BufRead};
 
 fn print_boxes(boxes: &[Vec<(String, u32)>]) {

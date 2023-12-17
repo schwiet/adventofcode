@@ -112,7 +112,7 @@ fn classify_hand(hand: &str, card_values: &HashMap<char, u8>) -> Hand {
         }
     }
 
-    if (card_counts.len() > 1) {
+    if card_counts.len() > 1 {
         card_counts.remove(&'J');
     }
     // end Joker's wild rule

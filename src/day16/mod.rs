@@ -97,7 +97,7 @@ pub fn run() -> io::Result<()> {
         // for the first and last row, start from each column
         if i == 0 || i == matrix.len() - 1 {
             let start_dir = if i == 0 { 1i32 } else { -1i32 };
-            for j in (0..row.len()) {
+            for j in 0..row.len() {
                 visited = get_visited(
                     &matrix,
                     (i as i32, j as i32),

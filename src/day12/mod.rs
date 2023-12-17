@@ -5,7 +5,7 @@ use std::io::{self, BufRead};
 type KnownPaths = HashMap<String, u64>;
 type VisitedGroup = HashMap<String, KnownPaths>;
 
-fn perm_count(mut visited: &mut VisitedGroup, seq: &[u32], group: &[char]) -> u64 {
+fn perm_count(visited: &mut VisitedGroup, seq: &[u32], group: &[char]) -> u64 {
     if seq.len() == 0 {
         return 1;
     }
@@ -31,8 +31,6 @@ fn perm_count(mut visited: &mut VisitedGroup, seq: &[u32], group: &[char]) -> u6
     let mut group = &group[..];
     let s = seq[0] as usize;
     while group.len() >= min_space {
-        let key: String = group.iter().collect();
-
         if group.len() == s || group[s] == '?' || group[s] == '.' {
             // can't satisfy seq if any dots
             if !group[..s].contains(&'.') {

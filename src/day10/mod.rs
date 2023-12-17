@@ -1,5 +1,4 @@
 use super::util::open_file_as_bufreader;
-use std::collections::HashMap;
 use std::io::{self, BufRead};
 
 // | is a vertical pipe connecting north and south.
@@ -47,7 +46,6 @@ pub fn run() -> io::Result<()> {
                 }
 
                 let mut sum: u64 = 0;
-                let mut odd: bool = false;
                 print!("\n");
                 for row in matrix {
                     let mut corner: char = ' ';

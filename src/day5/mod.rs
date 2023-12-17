@@ -13,7 +13,7 @@ const VAL_PTRN: &str = r"^\d+[\s\d]*$";
 
 pub fn run() -> io::Result<()> {
     // Create a new BufReader for the file
-    let mut reader = open_file_as_bufreader("src/day5/input.txt")?;
+    let reader = open_file_as_bufreader("src/day5/input.txt")?;
 
     let mut seeds: Vec<u64> = Vec::new();
     let mut seed_to_soil: Vec<Mapping> = Vec::new();

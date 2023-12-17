@@ -36,7 +36,7 @@ pub fn run() -> io::Result<()> {
                 col_end: mat.end(),
             });
             let n = mat.as_str().parse::<usize>().unwrap();
-            for i in (mat.start()..mat.end() + 1) {
+            for i in mat.start()..mat.end() + 1 {
                 numbers.insert((row, i), n);
             }
         }
@@ -61,8 +61,8 @@ pub fn run() -> io::Result<()> {
         } else {
             0
         };
-        'row_loop: for r in (start_row..start_row + 3) {
-            for c in (start_col..start_col + num.as_str.len() + 2) {
+        'row_loop: for r in start_row..start_row + 3 {
+            for c in start_col..start_col + num.as_str.len() + 2 {
                 if chars.contains(&(r as usize, c)) {
                     println!("\tfound symbol for {} at: ({r} {c})", num.as_str);
                     sum += num.as_str.parse::<usize>().unwrap();
@@ -79,8 +79,8 @@ pub fn run() -> io::Result<()> {
         let mut adj_parts = 0usize;
         let mut product = 1usize;
         println!("gear {} {}", gear.0, gear.1);
-        for r in (0..3) {
-            for c in (0..3) {
+        for r in 0..3 {
+            for c in 0..3 {
                 if let Some(n) = numbers.get(&(r + gear.0, c + gear.1)) {
                     adj_parts += 1;
                     product *= n;

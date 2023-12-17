@@ -10,7 +10,7 @@ struct Directions {
 }
 
 fn find_loop(positions: &HashMap<String, Directions>, directions: String, start: String) -> u64 {
-    let ends_Z = Regex::new(r".*Z$").unwrap();
+    let ends_z = Regex::new(r".*Z$").unwrap();
 
     let mut steps = 0u64;
     let mut visited: HashMap<String, u64> = HashMap::new();
@@ -36,7 +36,7 @@ fn find_loop(positions: &HashMap<String, Directions>, directions: String, start:
             steps += 1;
 
             // keep track of when position ending with Z is found
-            if let Some(captures) = ends_Z.captures(&next) {
+            if let Some(captures) = ends_z.captures(&next) {
                 let z_str = captures.get(0).unwrap().as_str().to_string();
                 z_found = Some(z_str);
             }
@@ -50,8 +50,6 @@ fn find_loop(positions: &HashMap<String, Directions>, directions: String, start:
             visited.insert(next.clone(), steps);
         }
     }
-
-    return steps;
 }
 
 fn gcd(a: u64, b: u64) -> u64 {
@@ -79,15 +77,13 @@ pub fn run() -> io::Result<()> {
     // Trim whitespace, including newlines, from the `directions` string
     directions = directions.trim().to_string();
 
-    // start positions
-    let pattern = Regex::new(r"A$").unwrap();
     // Create an empty Vec<String>
     let mut positions: Vec<String> = Vec::new();
 
     let mut positions_map: HashMap<String, Directions> = HashMap::new();
 
     let re = Regex::new(r"(\w+) = \((\w+), (\w+)\)").unwrap();
-    let ends_A = Regex::new(r".*A$").unwrap();
+    let ends_a = Regex::new(r".*A$").unwrap();
 
     let lines = reader.lines();
     let pos_lines = lines.skip(1);
@@ -108,7 +104,7 @@ pub fn run() -> io::Result<()> {
             };
             positions_map.insert(position.to_string(), directions);
 
-            if let Some(start_pos) = ends_A.captures(&position) {
+            if let Some(start_pos) = ends_a.captures(&position) {
                 positions.push(start_pos.get(0).unwrap().as_str().to_string());
             }
         } else {

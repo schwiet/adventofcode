@@ -1,6 +1,5 @@
 use super::util::open_file_as_bufreader;
 use std::io::{self, BufRead};
-use std::ops::Range;
 
 use nalgebra::DMatrix;
 
@@ -25,7 +24,7 @@ fn are_one_bit_off(x: u64, y: u64) -> Option<u32> {
     return None;
 }
 
-fn find_reflection_if_smudged(vec: &[u64], bit_len: usize) -> Option<usize> {
+fn find_reflection_if_smudged(vec: &[u64], _bit_len: usize) -> Option<usize> {
     // twiddle bits to remove smudges
     let mut i = 0;
     // idk, maybe a blank line slips in
@@ -39,7 +38,7 @@ fn find_reflection_if_smudged(vec: &[u64], bit_len: usize) -> Option<usize> {
             // println!("checking {i} {j}, len: {}", vec.len());
             // println!("\t{:0width$b}", vec[i], width = bit_len);
             // println!("\t{:0width$b}", vec[j], width = bit_len);
-            if let Some(k) = are_one_bit_off(vec[i], vec[j]) {
+            if let Some(_k) = are_one_bit_off(vec[i], vec[j]) {
                 // TODO: check if this smudge is along a reflection
                 if (j - i) % 2 == 1 {
                     let mut v_copy: Vec<u64> = vec.iter().cloned().collect();
@@ -65,10 +64,10 @@ fn find_reflection_if_smudged(vec: &[u64], bit_len: usize) -> Option<usize> {
 }
 
 fn find_reflection(vec: &[u64], start: usize) -> Option<usize> {
-    for i in (start..vec.len() - 1) {
+    for i in start..vec.len() - 1 {
         if vec[i] == vec[i + 1] {
             let mut found_diff = false;
-            for (l, u) in (0..i + 1).rev().zip((i + 1..vec.len())) {
+            for (l, u) in (0..i + 1).rev().zip(i + 1..vec.len()) {
                 // println!("comparing \n\t{}\n\t{}", vec[l], vec[u]);
                 if vec[l] != vec[u] {
                     found_diff = true;
@@ -93,12 +92,9 @@ pub fn run() -> io::Result<()> {
     let mut ref_cols: u64 = 0;
 
     let mut rows: Vec<u64> = Vec::new();
-    let mut cols: Vec<u64> = Vec::new();
     let mut matrix: Vec<Vec<u8>> = Vec::new();
 
     let mut col_count = 0usize;
-
-    let mut sum = 0u64;
 
     for line in reader.lines() {
         let line = line?;
@@ -111,29 +107,27 @@ pub fn run() -> io::Result<()> {
 
             // println!("Transpose {mat}");
 
-            cols = mat
+            let mut cols: Vec<u64> = mat
                 .row_iter()
                 .map(|row| binary_to_u64(&row.iter().cloned().collect::<Vec<u8>>()))
                 .collect();
 
             // find reflection
-            let mut row_index: Option<usize> = None;
-            let mut col_index: Option<usize> = None;
 
             // // row_index = find_reflection(&rows);
-            row_index = find_reflection_if_smudged(&rows, col_count);
+            let row_index = find_reflection_if_smudged(&rows, col_count);
             if let Some(ref_row) = row_index {
-                ref_rows += (ref_row as u64);
+                ref_rows += ref_row as u64;
                 // println!("found row reflection {ref_row}");
-                for i in (0..rows.len()) {
+                for _ in 0..rows.len() {
                     // println!("Row: {} - {i}", rows[i]);
                 }
             }
 
             // col_index = find_reflection(&cols);
-            col_index = find_reflection_if_smudged(&cols, row_count);
+            let col_index = find_reflection_if_smudged(&cols, row_count);
             if let Some(ref_col) = col_index {
-                ref_cols += (ref_col as u64);
+                ref_cols += ref_col as u64;
                 // println!("found column reflection {ref_col}");
                 // for i in (0..cols.len()) {
                 // println!("Col: {} - {i}", cols[i]);
