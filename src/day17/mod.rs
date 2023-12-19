@@ -111,9 +111,12 @@ pub fn run() -> io::Result<()> {
         let direction = node.direction;
         let direction_count = node.direction_count;
 
-        update_or_add_node(position, distance, goal, &matrix, &mut heap, &mut map, l, 1);
-        update_or_add_node(position, distance, goal, &matrix, &mut heap, &mut map, r, 1);
-        if direction_count < 3 {
+        // these conditions changed for part 2 of the puzzle
+        if direction_count > 3 {
+          update_or_add_node(position, distance, goal, &matrix, &mut heap, &mut map, l, 1);
+          update_or_add_node(position, distance, goal, &matrix, &mut heap, &mut map, r, 1);
+        }
+        if direction_count < 10 {
             update_or_add_node(
                 position,
                 distance,
