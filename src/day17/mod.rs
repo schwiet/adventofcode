@@ -1,21 +1,49 @@
 use super::util::open_file_as_bufreader;
-use std::collections::VecDeque;
+use core::cmp::Ordering;
+use std::collections::hash_map::Entry::Occupied;
+use std::collections::{BinaryHeap, HashMap};
 use std::io::{self, BufRead};
 
-#[derive(Debug)]
+type Position = (i32, i32);
+
+#[derive(Debug, Clone, Copy)]
 struct Node {
-    position: (i32, i32),
+    position: Position,
     distance: usize,
+    estimate: usize,
     direction: (i32, i32),
     direction_count: u8,
 }
 
+impl Ord for Node {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let other_total = other.distance + other.estimate;
+        let node_total = self.distance + self.estimate;
+        other_total.cmp(&node_total) // Min-heap
+    }
+}
+
+impl PartialOrd for Node {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Node {
+    fn eq(&self, other: &Self) -> bool {
+        self.position == other.position
+    }
+}
+
+impl Eq for Node {}
+
 pub fn run() -> io::Result<()> {
     // Create a new BufReader for the file
-    let reader = open_file_as_bufreader("src/day17/example.txt")?;
+    let reader = open_file_as_bufreader("src/day17/test.txt")?;
 
     let mut matrix: Vec<Vec<u8>> = Vec::new();
-    let mut queue: VecDeque<Node> = VecDeque::new();
+    let mut heap: BinaryHeap<Node> = BinaryHeap::new();
+    let mut map: HashMap<Position, Node> = HashMap::new();
     for (i, line) in reader.lines().enumerate() {
         let line = line?;
 
@@ -31,16 +59,26 @@ pub fn run() -> io::Result<()> {
     // define the goal as the node in the lower right corner of the grid
     let goal = (matrix.len() as i32 - 1, matrix[0].len() as i32 - 1);
 
-    // push the starting point to the queue
-    queue.push_back(Node {
+    // push the starting point to the heap
+    let start = Node {
         position: (0, 0),
         distance: 0,
+        estimate: 0,
         direction: (0, 1),
         direction_count: 0,
-    });
+    };
+    map.insert((0, 0), start);
+    heap.push(start.clone());
 
-    // search the priority queue
-    while let Some(node) = queue.pop_front() {
+    // search the priority heap
+    while let Some(next) = heap.pop() {
+        let node = map.get(&next.position).unwrap();
+
+        // skip stale entries
+        if node.distance != next.distance {
+            continue;
+        }
+
         if node.position == goal {
             println!("END! {:?}", node);
             break;
@@ -61,53 +99,37 @@ pub fn run() -> io::Result<()> {
             }
         };
 
-        update_or_add_node(
-            node.position,
-            node.distance,
-            goal,
-            &matrix,
-            &mut queue,
-            l,
-            1,
-            1,
-        );
-        update_or_add_node(
-            node.position,
-            node.distance,
-            goal,
-            &matrix,
-            &mut queue,
-            r,
-            1,
-            1,
-        );
-        print!("trying ( ");
-        let mut straight_dist = node.distance;
-        // TODO: I'm not totally sure this is the way to handle the consecutive step constraint
-        for i in (node.direction_count + 1)..4 {
-            print!("{i} ");
-            if let Some(dist) = update_or_add_node(
-                node.position,
-                straight_dist,
+        let position = node.position;
+        let distance = node.distance;
+        let direction = node.direction;
+        let direction_count = node.direction_count;
+
+        update_or_add_node(position, distance, goal, &matrix, &mut heap, &mut map, l, 1);
+        update_or_add_node(position, distance, goal, &matrix, &mut heap, &mut map, r, 1);
+        if direction_count < 3 {
+            update_or_add_node(
+                position,
+                distance,
                 goal,
                 &matrix,
-                &mut queue,
-                (node.direction.0, node.direction.1),
-                node.direction_count + i,
-                i as i32,
-            ) {
-                straight_dist += dist;
-            }
+                &mut heap,
+                &mut map,
+                (direction.0, direction.1),
+                direction_count + 1,
+            );
         }
-        println!(") Steps from, {:?}", node.position);
-
-        println!("QUEUE");
-        for node in queue.iter() {
+        // println!(") Steps from, {:?}", position);
+        println!("nodes");
+        for node in heap.iter() {
             println!("\t{:?}", node);
         }
-
-        // TODO: sort
     }
+
+    println!("nodes");
+    for node in map.iter() {
+        println!("\t{:?}", node);
+    }
+
     Ok(())
 }
 
@@ -116,34 +138,35 @@ fn update_or_add_node(
     dist_offset: usize,
     goal: (i32, i32),
     matrix: &Vec<Vec<u8>>,
-    queue: &mut VecDeque<Node>,
+    heap: &mut BinaryHeap<Node>,
+    map: &mut HashMap<Position, Node>,
     direction: (i32, i32),
     direction_count: u8,
-    look_ahead: i32, // TODO: unsure about this
 ) -> Option<usize> {
-    let pos = (
-        start_pos.0 + (direction.0 * look_ahead),
-        start_pos.1 + (direction.1 * look_ahead),
-    );
+    let pos = (start_pos.0 + direction.0, start_pos.1 + direction.1);
 
     if pos.0 >= 0 && pos.0 <= goal.0 && pos.1 >= 0 && pos.1 <= goal.1 {
         let dist_to_next = matrix[pos.0 as usize][pos.1 as usize] as usize;
         let distance = dist_offset + dist_to_next;
+        let estimate = (goal.0 - pos.0 + goal.1 - pos.1) as usize;
 
-        if let Some(next_node) = queue.iter_mut().find(|x| x.position == pos) {
-            if distance < next_node.distance {
-                next_node.distance = distance;
-                next_node.direction = direction;
-                next_node.direction_count = direction_count;
+        if let Occupied(mut next_node) = map.entry(pos) {
+            if distance < next_node.get().distance {
+                next_node.get_mut().distance = distance;
+                next_node.get_mut().estimate = estimate;
+                next_node.get_mut().direction = direction;
+                next_node.get_mut().direction_count = direction_count;
             }
         } else {
             let new_node = Node {
                 position: pos,
-                distance: distance,
-                direction: direction,
-                direction_count: direction_count,
+                distance,
+                estimate,
+                direction,
+                direction_count,
             };
-            queue.push_front(new_node);
+            heap.push(new_node);
+            map.insert(pos, new_node.clone());
         }
 
         return Some(distance);
