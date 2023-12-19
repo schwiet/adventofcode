@@ -4,11 +4,11 @@ use std::collections::hash_map::Entry::Occupied;
 use std::collections::{BinaryHeap, HashMap};
 use std::io::{self, BufRead};
 
-type Position = (i32, i32);
+type State = (i32, i32, i32, i32, u8);
 
 #[derive(Debug, Clone, Copy)]
 struct Node {
-    position: Position,
+    position: (i32, i32),
     distance: usize,
     estimate: usize,
     direction: (i32, i32),
@@ -31,7 +31,7 @@ impl PartialOrd for Node {
 
 impl PartialEq for Node {
     fn eq(&self, other: &Self) -> bool {
-        self.position == other.position
+        self.position == other.position && self.direction_count == other.direction_count
     }
 }
 
@@ -39,11 +39,11 @@ impl Eq for Node {}
 
 pub fn run() -> io::Result<()> {
     // Create a new BufReader for the file
-    let reader = open_file_as_bufreader("src/day17/test.txt")?;
+    let reader = open_file_as_bufreader("src/day17/input.txt")?;
 
     let mut matrix: Vec<Vec<u8>> = Vec::new();
     let mut heap: BinaryHeap<Node> = BinaryHeap::new();
-    let mut map: HashMap<Position, Node> = HashMap::new();
+    let mut map: HashMap<State, Node> = HashMap::new();
     for (i, line) in reader.lines().enumerate() {
         let line = line?;
 
@@ -67,12 +67,19 @@ pub fn run() -> io::Result<()> {
         direction: (0, 1),
         direction_count: 0,
     };
-    map.insert((0, 0), start);
+    map.insert((0, 0, 0, 1, 0), start);
     heap.push(start.clone());
 
     // search the priority heap
     while let Some(next) = heap.pop() {
-        let node = map.get(&next.position).unwrap();
+        let state = (
+            next.position.0,
+            next.position.1,
+            next.direction.0,
+            next.direction.1,
+            next.direction_count,
+        );
+        let node = map.get(&state).unwrap();
 
         // skip stale entries
         if node.distance != next.distance {
@@ -119,16 +126,23 @@ pub fn run() -> io::Result<()> {
             );
         }
         // println!(") Steps from, {:?}", position);
-        println!("nodes");
+        // println!("nodes");
         for node in heap.iter() {
-            println!("\t{:?}", node);
+            // println!("\t{:?}", node);
         }
     }
 
-    println!("nodes");
-    for node in map.iter() {
-        println!("\t{:?}", node);
-    }
+    // println!("results");
+    // for (i, row) in matrix.iter().enumerate() {
+    //   for j in 0..row.len() {
+    //     if let Some(node) = map.get(&(i as i32, j as i32)) {
+    //       print!("{}\t", node.distance);
+    //     } else {
+    //       print!("x\t");
+    //     }
+    //   }
+    //   println!()
+    // }
 
     Ok(())
 }
@@ -139,18 +153,19 @@ fn update_or_add_node(
     goal: (i32, i32),
     matrix: &Vec<Vec<u8>>,
     heap: &mut BinaryHeap<Node>,
-    map: &mut HashMap<Position, Node>,
+    map: &mut HashMap<State, Node>,
     direction: (i32, i32),
     direction_count: u8,
 ) -> Option<usize> {
     let pos = (start_pos.0 + direction.0, start_pos.1 + direction.1);
+    let state = (pos.0, pos.1, direction.0, direction.1, direction_count);
 
     if pos.0 >= 0 && pos.0 <= goal.0 && pos.1 >= 0 && pos.1 <= goal.1 {
         let dist_to_next = matrix[pos.0 as usize][pos.1 as usize] as usize;
         let distance = dist_offset + dist_to_next;
         let estimate = (goal.0 - pos.0 + goal.1 - pos.1) as usize;
 
-        if let Occupied(mut next_node) = map.entry(pos) {
+        if let Occupied(mut next_node) = map.entry(state) {
             if distance < next_node.get().distance {
                 next_node.get_mut().distance = distance;
                 next_node.get_mut().estimate = estimate;
@@ -166,7 +181,7 @@ fn update_or_add_node(
                 direction_count,
             };
             heap.push(new_node);
-            map.insert(pos, new_node.clone());
+            map.insert(state, new_node.clone());
         }
 
         return Some(distance);
