@@ -44,7 +44,7 @@ pub fn run() -> io::Result<()> {
     let mut matrix: Vec<Vec<u8>> = Vec::new();
     let mut heap: BinaryHeap<Node> = BinaryHeap::new();
     let mut map: HashMap<State, Node> = HashMap::new();
-    for (i, line) in reader.lines().enumerate() {
+    for (_i, line) in reader.lines().enumerate() {
         let line = line?;
 
         let row: Vec<u8> = line
@@ -130,7 +130,7 @@ pub fn run() -> io::Result<()> {
         }
         // println!(") Steps from, {:?}", position);
         // println!("nodes");
-        for node in heap.iter() {
+        for _node in heap.iter() {
             // println!("\t{:?}", node);
         }
     }

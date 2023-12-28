@@ -1,5 +1,5 @@
 use super::util::open_file_as_bufreader;
-use std::collections::HashSet;
+
 use std::io::{self, BufRead};
 use regex::Regex;
 
@@ -11,7 +11,7 @@ pub fn run() -> io::Result<()> {
     for line in reader.lines() {
         let line = line?;
 
-        let nodes: Vec<String> = re.find_iter(&line)
+        let _nodes: Vec<String> = re.find_iter(&line)
             .map(|mat| mat.as_str().to_string())
             .collect();
 

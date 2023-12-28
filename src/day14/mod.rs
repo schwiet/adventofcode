@@ -21,7 +21,7 @@ fn transpose(matrix: Matrix) -> Matrix {
 }
 
 fn calc_load(matrix: &Matrix) -> usize {
-    let mut load = matrix.iter().fold(0usize, |acc, row| {
+    let load = matrix.iter().fold(0usize, |acc, row| {
         let mut pt = row.len();
         let row_load = row.iter().enumerate().fold(0, |acc, cell| {
             if cell.1 == &'O' {
@@ -41,26 +41,26 @@ fn calc_load(matrix: &Matrix) -> usize {
     return load;
 }
 
-fn tilt(mut matrix: &mut Matrix) {
+fn tilt(matrix: &mut Matrix) {
     // for each row, split on the cube rocks "#", sort each resulting vector or
     // just count the "O"s and replace the section, then join them all back with
     // the "#"
-    for i in 0..matrix.len() {}
+    for _i in 0..matrix.len() {}
 }
 
 pub fn run() -> io::Result<()> {
     // Create a new BufReader for the file
     let reader = open_file_as_bufreader("src/day14/input.txt")?;
     let mut rows: Vec<Vec<char>> = Vec::new();
-    let mut cube: Vec<Vec<char>> = Vec::new();
+    let _cube: Vec<Vec<char>> = Vec::new();
     for line in reader.lines() {
         let line = line?;
 
         rows.push(line.chars().collect());
     }
 
-    let num_rows = rows.len();
-    let num_cols = rows[0].len();
+    let _num_rows = rows.len();
+    let _num_cols = rows[0].len();
 
     let mut matrix = transpose(rows);
     for i in 0..100 {
@@ -71,7 +71,7 @@ pub fn run() -> io::Result<()> {
         }
     }
 
-    let mut load = calc_load(&matrix);
+    let load = calc_load(&matrix);
     // println!("{matrix}");
     println!("Load: {load}");
     Ok(())

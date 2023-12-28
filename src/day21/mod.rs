@@ -87,7 +87,7 @@ pub fn run() -> io::Result<()> {
         i += 1;
     }
 
-    for i in 0..64 {
+    for _i in 0..64 {
         gen = run_game(&gardens, &gen)
     }
 
