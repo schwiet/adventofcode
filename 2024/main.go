@@ -2,6 +2,7 @@ package main
 
 import (
 	"aoc-2024/day1"
+	"aoc-2024/day2"
 	"fmt"
 	"os"
 )
@@ -23,6 +24,8 @@ func main() {
 	switch day {
 	case "1":
 		err = day1.Solve()
+	case "2":
+		err = day2.Solve(os.Args[2])
 	// Add cases for additional days here
 	default:
 		err = fmt.Errorf(`Day %s is not implemented yet.`, day)
