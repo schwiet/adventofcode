@@ -1,4 +1,3 @@
-# adventofcode
-Advent of Code Solutions
+# Advent of Code
 
-Yo, I've never used Rust before. Abandon hope all ye who enter here...
+Solutions for selected https://adventofcode.com/ puzzles
