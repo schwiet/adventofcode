@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func part1() error {
+func Solve() error {
 	lines, err := utils.ReadLines("day1/input.txt")
 	if err != nil {
 		return err
@@ -16,7 +16,9 @@ func part1() error {
 
 	fmt.Printf("• Read %d lines\n", len(lines))
 
-	note := [][]int{[]int{}, []int{}}
+	note := [][]int{{}, {}}
+	var leftList []string
+	rightCounts := map[string]int{}
 	for _, line := range lines {
 		words := strings.Fields(line)
 
@@ -29,6 +31,12 @@ func part1() error {
 				}
 				// append number to column
 				note[i] = append(note[i], num)
+
+				if i == 0 {
+					leftList = append(leftList, word)
+				} else if i == 1 {
+					rightCounts[word] = rightCounts[word] + 1
+				}
 			}
 		}
 	}
@@ -47,11 +55,15 @@ func part1() error {
 	}
 
 	fmt.Printf("diff sum: %d\n", diffSum)
-	return nil
-}
 
-func Solve() error {
-	return part1()
+	sim := 0
+	for _, row := range leftList {
+		rc := rightCounts[row]
+		ln, _ := strconv.Atoi(row)
+		sim += rc * ln
+	}
+	fmt.Printf("similarity: %d\n", sim)
+	return nil
 }
 
 func abs(n int) int {
