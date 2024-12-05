@@ -5,6 +5,7 @@ import (
 	"aoc-2024/day2"
 	"aoc-2024/day3"
 	"aoc-2024/day4"
+	"aoc-2024/day5"
 	"fmt"
 	"os"
 )
@@ -32,6 +33,8 @@ func main() {
 		err = day3.Solve()
 	case "4":
 		err = day4.Solve()
+	case "5":
+		err = day5.Solve()
 	// Add cases for additional days here
 	default:
 		err = fmt.Errorf(`Day %s is not implemented yet.`, day)
