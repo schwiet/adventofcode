@@ -30,13 +30,44 @@ func Solve() error {
 			}
 		}
 	}
+	start := Position{x: pos.x, y: pos.y}
 
 	outOfBounds := false
 	direction := Position{x: 0, y: -1}
 	visited := make(map[Position]map[Position]bool)
 	visited[pos] = map[Position]bool{direction: true}
-	loopCount := 0
+	loopChan := make(chan *Position)
+	numRoutines := 0
 	for !outOfBounds {
+		// take a step
+		pos = moveForward(pos, direction)
+
+		// if it's out of bounds, break
+		if pos.x < 0 || pos.x >= len(grid[0]) || pos.y < 0 || pos.y >= len(grid) {
+			fmt.Printf("out of bounds: %d, %d\n", pos.x, pos.y)
+			outOfBounds = true
+			break
+		}
+
+		obstacle := grid[pos.y][pos.x]
+		// if it is an obstacle, take a step back and turn right
+		if obstacle {
+			pos = moveBackward(pos, direction)
+			direction = turnRight(direction)
+			// if it's not an obstacle, mark that we've been here, going this direction
+			// also check if turning right from here will loop
+			_, beenHere := visited[pos]
+			if !beenHere {
+				visited[pos] = map[Position]bool{direction: true}
+			} else {
+				// track that we've been here facing this direction
+				visited[pos][direction] = true
+			}
+			continue
+		}
+
+		// if it's not an obstacle, mark that we've been here, going this direction
+		// also check if turning right from here will loop
 		_, beenHere := visited[pos]
 		if !beenHere {
 			visited[pos] = map[Position]bool{direction: true}
@@ -45,84 +76,133 @@ func Solve() error {
 			visited[pos][direction] = true
 		}
 
-		nextX := pos.x + direction.x
-		nextY := pos.y + direction.y
-		// if it's out of bounds, break
-		if nextX < 0 || nextX >= len(grid[0]) || nextY < 0 || nextY >= len(grid) {
-			fmt.Printf("out of bounds: %d, %d\n", nextX, nextY)
-			outOfBounds = true
-		}
-
-		// if it's not an obstacle, move to it
-		obstacle := outOfBounds || grid[nextY][nextX]
-		right_turn := Position{x: -direction.y, y: direction.x}
-		if !obstacle {
-			pullBack := Position{x: pos.x - right_turn.x, y: pos.y - right_turn.y}
-			// if we've been here facing the other direction, we've looped
-			if willLoopFromHere(visited, nil, pullBack, right_turn, grid) {
-				loopCount += 1
+		look_ahead := Position{x: pos.x + direction.x, y: pos.y + direction.y}
+		oob_ahead := look_ahead.x < 0 || look_ahead.x >= len(grid[0]) || look_ahead.y < 0 || look_ahead.y >= len(grid)
+		obstacle_ahead := oob_ahead || grid[look_ahead.y][look_ahead.x]
+		start_pos_ahead := look_ahead.x == start.x && look_ahead.y == start.y
+		// if there is not an obstacle ahead, check if turning right will loop
+		if !obstacle_ahead && !start_pos_ahead {
+			// Create a deep copy of visited for this goroutine
+			visitedCopy := make(map[Position]map[Position]bool)
+			for k, v := range visited {
+				visitedCopy[k] = make(map[Position]bool)
+				for dir, isVisited := range v {
+					visitedCopy[k][dir] = isVisited
+				}
 			}
-			// carry on
-			pos = Position{x: nextX, y: nextY}
-		} else {
-			// turn right
-			direction = right_turn
+			// start a goroutine to check if turning right here will loop
+			go willLoopFromHere(
+				visitedCopy,
+				pos,
+				turnRight(direction),
+				grid,
+				loopChan,
+			)
+			numRoutines += 1
 		}
 	}
+
+	loopPositions := make(map[Position]bool)
+	for i := 0; i < numRoutines; i++ {
+		if loopPos := <-loopChan; loopPos != nil {
+			loopPositions[*loopPos] = true
+		}
+	}
+
+	// Print the grid with visited markers
+	print_it := false
+	for y := 0; y < len(grid) && print_it; y++ {
+		for x := 0; x < len(grid[0]); x++ {
+			pos := Position{x: x, y: y}
+			if grid[y][x] {
+				fmt.Print("#")
+			} else if visits, ok := visited[pos]; ok {
+				// Check which directions this position was visited from
+				hasHorizontal := visits[Position{x: 1, y: 0}] || visits[Position{x: -1, y: 0}]
+				hasVertical := visits[Position{x: 0, y: 1}] || visits[Position{x: 0, y: -1}]
+
+				if loopPositions[pos] && grid[y][x] {
+					fmt.Printf("out of bounds: %d, %d\n", x, y)
+					os.Exit(1)
+				}
+				if loopPositions[pos] {
+					fmt.Print("R")
+				} else if pos.x == start.x && pos.y == start.y {
+					fmt.Print("X")
+				} else if hasHorizontal && hasVertical {
+					fmt.Print("+")
+				} else if hasHorizontal {
+					fmt.Print("-")
+				} else if hasVertical {
+					fmt.Print("|")
+				}
+			} else {
+				fmt.Print("•")
+			}
+		}
+		fmt.Println()
+	}
+
 	fmt.Printf("visited: %v\n", len(visited))
-	fmt.Printf("loop count: %d\n", loopCount)
+	fmt.Printf("loop count: %d\n", len(loopPositions))
 	return nil
 }
 
 func willLoopFromHere(
 	visited map[Position]map[Position]bool,
-	searchPositions map[Position]map[Position]bool,
 	pos Position,
 	direction Position,
 	grid [][]bool,
-) bool {
+	loopChan chan<- *Position,
+) {
+	loopPos := moveForward(pos, turnLeft(direction))
+
 	for {
-		dirs, beenHere := visited[pos]
-		if beenHere {
-			if dirs[direction] {
-				return true
-			}
-		}
-		nextX := pos.x + direction.x
-		nextY := pos.y + direction.y
-		// copy the search positions
-		innerLoop := make(map[Position]map[Position]bool)
-		for k, v := range searchPositions {
-			innerLoop[k] = v
-		}
-
-		if nextX < 0 || nextX >= len(grid[0]) || nextY < 0 || nextY >= len(grid) {
-			return false
-		}
-
 		// determine if we've already searched this route
-		inner, searchedHere := innerLoop[pos]
+		inner, searchedHere := visited[pos]
 		if searchedHere && inner[direction] {
-			return false
+			loopChan <- &loopPos
+			return
 		} else if searchedHere {
 			inner[direction] = true
 		} else {
 			inner = make(map[Position]bool)
 			inner[direction] = true
-			innerLoop[pos] = inner
-		}
-
-		// if it's an obstacle, search right from here
-		obstacle := grid[nextY][nextX]
-		if obstacle {
-			right_turn := Position{x: -direction.y, y: direction.x}
-			pullBack := Position{x: pos.x - right_turn.x, y: pos.y - right_turn.y}
-			return willLoopFromHere(visited, innerLoop, pullBack, right_turn, grid)
+			visited[pos] = inner
 		}
 
 		// carry on
-		pos = Position{x: nextX, y: nextY}
+		pos = moveForward(pos, direction)
+		if pos.x < 0 || pos.x >= len(grid[0]) || pos.y < 0 || pos.y >= len(grid) {
+			loopChan <- nil
+			return
+		}
+
+		// if it's an obstacle, back up, turn right and keep going
+		obstacle := grid[pos.y][pos.x]
+		if obstacle {
+			// back up
+			pos = moveBackward(pos, direction)
+			// turn right
+			direction = turnRight(direction)
+		}
 	}
+}
+
+func turnRight(direction Position) Position {
+	return Position{x: -direction.y, y: direction.x}
+}
+
+func turnLeft(direction Position) Position {
+	return Position{x: direction.y, y: -direction.x}
+}
+
+func moveForward(pos Position, direction Position) Position {
+	return Position{x: pos.x + direction.x, y: pos.y + direction.y}
+}
+
+func moveBackward(pos Position, direction Position) Position {
+	return Position{x: pos.x - direction.x, y: pos.y - direction.y}
 }
 
 type Position struct {
