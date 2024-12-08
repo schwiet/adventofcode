@@ -10,7 +10,7 @@ type obstacles struct {
 	grid [][]bool
 }
 
-func (o *obstacles) handleObstacle(pos Coordinate, direction Coordinate) (Coordinate, Coordinate) {
+func (o *obstacles) handleObstacle(pos Coordinate, direction Direction) (Coordinate, Direction) {
 	if o.isObstacle(pos) {
 		pos = moveBackward(pos, direction)
 		direction = turnRight(direction)
@@ -26,15 +26,15 @@ func (o *obstacles) isObstacle(pos Coordinate) bool {
 	return o.grid[pos.y][pos.x]
 }
 
-func turnRight(direction Coordinate) Coordinate {
-	return Coordinate{x: -direction.y, y: direction.x}
+func turnRight(direction Direction) Direction {
+	return Direction{x: -direction.y, y: direction.x}
 }
 
-func moveForward(pos Coordinate, direction Coordinate) Coordinate {
+func moveForward(pos Coordinate, direction Direction) Coordinate {
 	return Coordinate{x: pos.x + direction.x, y: pos.y + direction.y}
 }
 
-func moveBackward(pos Coordinate, direction Coordinate) Coordinate {
+func moveBackward(pos Coordinate, direction Direction) Coordinate {
 	return Coordinate{x: pos.x - direction.x, y: pos.y - direction.y}
 }
 
@@ -42,6 +42,7 @@ type Coordinate struct {
 	x int
 	y int
 }
+type Direction Coordinate
 
 func (c Coordinate) equals(other Coordinate) bool {
 	return c.x == other.x && c.y == other.y
@@ -58,7 +59,7 @@ func Solve() error {
 	lines := strings.Split(string(data), "\n")
 	var inputMap *obstacles = &obstacles{}
 
-	var pos Coordinate
+	var start, pos Coordinate
 	for i, line := range lines {
 		if len(line) == 0 {
 			continue
@@ -67,15 +68,15 @@ func Solve() error {
 		for j, char := range line {
 			inputMap.grid[i][j] = char == '#'
 			if char == '^' {
-				pos = Coordinate{x: j, y: i}
+				start = Coordinate{x: j, y: i}
 			}
 		}
 	}
-	start := Coordinate{x: pos.x, y: pos.y}
+	pos = start
 
 	outOfBounds := false
-	direction := Coordinate{x: 0, y: -1}
-	visited := make(map[Coordinate]map[Coordinate]bool)
+	direction := Direction{x: 0, y: -1}
+	visited := make(map[Coordinate]map[Direction]bool)
 	loopCount := 0
 	for !outOfBounds {
 		// if it's out of bounds, break
@@ -91,7 +92,7 @@ func Solve() error {
 		// see if we've ever been here before
 		_, beenHere := visited[pos]
 		if !beenHere {
-			visited[pos] = make(map[Coordinate]bool)
+			visited[pos] = make(map[Direction]bool)
 		}
 		// track that we've been here facing this direction
 		visited[pos][direction] = true
@@ -99,23 +100,24 @@ func Solve() error {
 		// determine if next step is eligible for placing an obstacle
 		look_ahead := moveForward(pos, direction)
 		_, beenThere := visited[look_ahead]
+		// if we haven't been there, it isn't out of bounds, isn't an obstacle
+		// and it isn't the start position, it is eligible
 		eligible := (!beenThere &&
 			!inputMap.isOutOfBounds(look_ahead) &&
 			!inputMap.isObstacle(look_ahead) &&
 			!start.equals(look_ahead))
-		// if it isn't out of bounds, isn't an obstacle,
-		// we haven't been here, and it isn't the start position, it is eligible
 		if eligible {
 			// Create a deep copy of visited for this goroutine
-			visitedCopy := make(map[Coordinate]map[Coordinate]bool, len(visited))
+			visitedCopy := make(map[Coordinate]map[Direction]bool, len(visited))
 			for k, v := range visited {
-				visitedCopy[k] = make(map[Coordinate]bool, len(v))
+				visitedCopy[k] = make(map[Direction]bool, len(v))
 				for dir := range v {
 					visitedCopy[k][dir] = true
 				}
 			}
-			// start a goroutine to check if turning right here will loop
-			if willLoopFromHere(visitedCopy, pos, turnRight(direction), inputMap) {
+			// check if turning right here will loop
+			loop := willLoopFromHere(visitedCopy, pos, turnRight(direction), inputMap, look_ahead)
+			if loop != nil {
 				loopCount += 1
 			}
 		}
@@ -130,28 +132,35 @@ func Solve() error {
 }
 
 func willLoopFromHere(
-	visited map[Coordinate]map[Coordinate]bool,
+	visited map[Coordinate]map[Direction]bool,
 	pos Coordinate,
-	direction Coordinate,
+	direction Direction,
 	inputMap *obstacles,
-) bool {
+	newObstacle Coordinate,
+) *map[Coordinate]map[Direction]bool {
 
 	for {
 		if inputMap.isOutOfBounds(pos) {
-			return false
+			return nil
 		}
 
 		// if it's an obstacle, back up, turn right and keep going
 		pos, direction = inputMap.handleObstacle(pos, direction)
 
+		// it it's a new obstacle, back up, turn right and keep going
+		if pos.equals(newObstacle) {
+			pos = moveBackward(pos, direction)
+			direction = turnRight(direction)
+		}
+
 		// determine if we've already searched this route
 		inner, searchedHere := visited[pos]
 		if searchedHere {
 			if inner[direction] {
-				return true
+				return &visited
 			}
 		} else {
-			inner = make(map[Coordinate]bool)
+			inner = make(map[Direction]bool)
 			visited[pos] = inner
 		}
 		// mark that we've been here facing this direction
