@@ -7,6 +7,7 @@ import (
 	"aoc-2024/day4"
 	"aoc-2024/day5"
 	"aoc-2024/day6"
+	"aoc-2024/day8"
 	"aoc-2024/day9"
 	"fmt"
 	"os"
@@ -39,6 +40,8 @@ func main() {
 		err = day5.Solve()
 	case "6":
 		err = day6.Solve()
+	case "8":
+		err = day8.Solve()
 	case "9":
 		err = day9.Solve()
 	// Add cases for additional days here
