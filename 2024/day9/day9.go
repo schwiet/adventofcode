@@ -7,12 +7,14 @@ import (
 	"strings"
 )
 
+type block struct {
+	data  []int64
+	added []int64
+	free  int64
+	index int64
+}
+
 func Solve() error {
-	type block struct {
-		data  []int64
-		free  int64
-		index int64
-	}
 
 	data, err := os.ReadFile("day9/input.txt")
 	if err != nil {
@@ -56,36 +58,83 @@ func Solve() error {
 		}
 		// fmt.Printf("Blocks: %v\n", blocks)
 	}
+
+	fragmentedBlocks := fragmentBlocks(blocks)
+	mergedBlocks := moveBlocks(blocks)
+
+	// fmt.Printf("Blocks After: %v\n", mergedBlocks)
+	fmt.Printf("Fragmented Checksum: %d\n", checksum(fragmentedBlocks))
+	fmt.Printf("Merged Checksum: %d\n", checksum(mergedBlocks))
+	return nil
+}
+
+func fragmentBlocks(blocks []block) []block {
+	newBlocks := make([]block, len(blocks))
+	copy(newBlocks, blocks)
+
 	freeIndex := 0
-	for i := len(blocks) - 1; i >= 0; i-- {
+	for i := len(newBlocks) - 1; i >= 0; i-- {
 		if i <= freeIndex {
 			break
 		}
-		blockToMove := blocks[i]
+		blockToMove := newBlocks[i]
 		for len(blockToMove.data) > 0 && i > freeIndex {
-			if blocks[freeIndex].free > 0 {
-				blocks[freeIndex].data = append(blocks[freeIndex].data, blockToMove.data[len(blockToMove.data)-1])
+			if newBlocks[freeIndex].free > 0 {
+				newBlocks[freeIndex].data = append(newBlocks[freeIndex].data, blockToMove.data[len(blockToMove.data)-1])
 				blockToMove.data = blockToMove.data[:len(blockToMove.data)-1]
-				blocks[freeIndex].free -= 1
+				newBlocks[freeIndex].free -= 1
 				blockToMove.free += 1
 			} else {
 				freeIndex += 1
 			}
 		}
-		blocks[i] = blockToMove
+		newBlocks[i] = blockToMove
+	}
+	return newBlocks
+}
+
+func moveBlocks(blocks []block) []block {
+	newBlocks := make([]block, len(blocks))
+	copy(newBlocks, blocks)
+
+	for i := range newBlocks {
+		newBlocks[i].added = make([]int64, newBlocks[i].free)
 	}
 
-	// fmt.Printf("Blocks After: %v\n", blocks)
-	index = int64(0)
-	checksum := int64(0)
-	for _, block := range blocks {
-		if len(block.data) > 0 {
-			for _, value := range block.data {
-				checksum += value * index
-				index += 1
+	for i := len(newBlocks) - 1; i >= 0; i-- {
+		freeIndex := 0
+		blockToMove := newBlocks[i]
+		for len(blockToMove.data) > 0 && i > freeIndex {
+			if newBlocks[freeIndex].free >= int64(len(blockToMove.data)) {
+				insertIndex := len(newBlocks[freeIndex].added) - int(newBlocks[freeIndex].free)
+				for x, value := range blockToMove.data {
+					newBlocks[freeIndex].added[insertIndex+x] = value
+					blockToMove.data[x] = 0
+				}
+				newBlocks[freeIndex].free -= int64(len(blockToMove.data))
+				blockToMove.free += int64(len(blockToMove.data))
+				newBlocks[i] = blockToMove
+				break
+			} else {
+				freeIndex += 1
 			}
 		}
 	}
-	fmt.Println(checksum)
-	return nil
+	return newBlocks
+}
+
+func checksum(blocks []block) int64 {
+	index := int64(0)
+	checksum := int64(0)
+	for _, block := range blocks {
+		for _, value := range block.data {
+			checksum += value * index
+			index += 1
+		}
+		for _, value := range block.added {
+			checksum += value * index
+			index += 1
+		}
+	}
+	return checksum
 }
