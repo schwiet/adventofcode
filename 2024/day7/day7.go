@@ -13,14 +13,21 @@ type calibration struct {
 	input  []float64
 }
 
+func merge(a, b float64) float64 {
+	aStr := strconv.FormatFloat(a, 'f', 0, 64)
+	bStr := strconv.FormatFloat(b, 'f', 0, 64)
+	merged, _ := strconv.ParseFloat(aStr+bStr, 64)
+	return merged
+}
+
 func isValid(output float64, current float64, input []float64) bool {
 	if len(input) == 0 {
 		return output == current
 	}
 
 	return (isValid(output, current+input[0], input[1:]) ||
-		// isValid(output, current-input[0], input[1:]) ||
-		// isValid(output, current/input[0], input[1:]) ||
+		// this line can be commented out to answer part 1
+		isValid(output, merge(current, input[0]), input[1:]) ||
 		isValid(output, current*input[0], input[1:]))
 }
 
