@@ -39,14 +39,18 @@ func Solve() error {
 	}
 
 	count := 0
+	allCount := 0
 	memo := make(memo)
+	assemblyMemo := make(assemblyMemo)
 	for _, target := range targets {
 		if canAssemble(target, available, memo) {
 			count++
 		}
+		allCount += findAssemblies(target, available, assemblyMemo)
 	}
 
 	fmt.Println("Possible targets:", count)
+	fmt.Println("All possible assemblies:", allCount)
 	return nil
 }
 
@@ -54,21 +58,21 @@ func Solve() error {
 type memo map[string]bool
 
 func canAssemble(target string, available []string, memo memo) bool {
-	// Check memo first
+	// check memo first
 	if result, exists := memo[target]; exists {
 		return result
 	}
 
-	// Base case - empty target can always be assembled
+	// base case - empty target can always be assembled
 	if len(target) == 0 {
 		memo[target] = true
 		return true
 	}
 
-	// Try each available string as a prefix
+	// try each available string as a prefix
 	for _, prefix := range available {
 		if len(prefix) <= len(target) && strings.HasPrefix(target, prefix) {
-			// Recursively check if remaining target can be assembled
+			// recursively check if remaining target can be assembled
 			if canAssemble(target[len(prefix):], available, memo) {
 				memo[target] = true
 				return true
@@ -78,4 +82,36 @@ func canAssemble(target string, available []string, memo memo) bool {
 
 	memo[target] = false
 	return false
+}
+
+// assemblyMemo stores previously computed assemblies for target strings
+type assemblyMemo map[string]int
+
+// findAssemblies returns all possible ways to assemble the target string from available pieces
+func findAssemblies(target string, available []string, memo assemblyMemo) int {
+	// Check memo first
+	if result, exists := memo[target]; exists {
+		return result
+	}
+
+	// Base case - empty target has one way to assemble (empty list)
+	if len(target) == 0 {
+		return 1
+	}
+
+	var results int
+
+	// try each available string as a prefix
+	for _, prefix := range available {
+		if len(prefix) <= len(target) && strings.HasPrefix(target, prefix) {
+			// recursively find assemblies for remaining target
+			subAssemblies := findAssemblies(target[len(prefix):], available, memo)
+
+			// add current prefix to start of each sub-assembly
+			results += subAssemblies
+		}
+	}
+
+	memo[target] = results
+	return results
 }
